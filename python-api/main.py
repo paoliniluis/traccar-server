@@ -18,9 +18,9 @@ async def shutdown_event():
 @app.post("/")
 async def getInformation(request: Request, id: str, timestamp: int, lat: float, lon: float, speed: int, bearing: int, altitude: float, accuracy: int, batt: int):
     values = {}
-    forwarded_ip = request.headers['x-forwarded-for']
-    real_ip = request.headers['x-real-ip']
-
+    
+    print (request.headers)
+    
     query = '''INSERT INTO gps_data
         (
         device_id,
@@ -31,9 +31,7 @@ async def getInformation(request: Request, id: str, timestamp: int, lat: float, 
         bearing,
         altitude,
         accuracy,
-        battery,
-        forwarded_ip,
-        real_ip
+        battery
         )
         VALUES
         (:id,
@@ -44,9 +42,7 @@ async def getInformation(request: Request, id: str, timestamp: int, lat: float, 
         :bearing,
         :altitude,
         :accuracy,
-        :batt,
-        :forwarded_ip,
-        :real_ip
+        :batt
         )
         '''
         
@@ -59,7 +55,5 @@ async def getInformation(request: Request, id: str, timestamp: int, lat: float, 
     values['altitude'] = altitude
     values['accuracy'] = accuracy
     values['batt'] = batt
-    values['forwarded_ip'] = forwarded_ip
-    values['real_ip'] = real_ip
     
     await database.execute(query=query, values=values)
