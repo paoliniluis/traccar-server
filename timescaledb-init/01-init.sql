@@ -12,9 +12,7 @@ DROP TABLE IF EXISTS gps_data;
         bearing double precision,
         altitude double precision,
         accuracy INTEGER,
-        battery double precision,
-        forwarded_ip VARCHAR(255),
-        real_ip VARCHAR(255)
+        battery double precision
     );
 
 SELECT create_hypertable('gps_data', 'sensor_timestamp');
