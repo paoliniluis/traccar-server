@@ -47,7 +47,7 @@ async def getInformation(request: Request, id: str, timestamp: int, lat: float, 
         '''
         
     values['id'] = id
-    values['timestamp'] = datetime.datetime.fromtimestamp(timestamp) - datetime.timedelta(hours=os.environ['TIMEZONE_DIFFERENCE'])
+    values['timestamp'] = datetime.datetime.fromtimestamp(timestamp) - datetime.timedelta(hours=int(os.environ['TIMEZONE_DIFFERENCE']))
     values['lat'] = lat
     values['lon'] = lon
     values['speed'] = speed
