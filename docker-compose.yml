@@ -1,0 +1,88 @@
+version: "3"
+services:
+    timescaledb:
+        image: timescale/timescaledb:latest-pg14
+        container_name: timescaledb
+        hostname: timescaledb
+        networks:
+        - app-tier
+        volumes:
+        - $PWD/timescaledb:/var/lib/postgresql/data
+        - $PWD/timescaledb-init:/docker-entrypoint-initdb.d/
+        environment:
+        - POSTGRES_PASSWORD=password
+        - POSTGRES_DB=gps
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U postgres -d gps"]
+            interval: 10s
+            timeout: 5s
+            retries: 30
+        cpus: 1
+        mem_limit: 512mb
+    grafana:
+        image: grafana/grafana:9.2.1
+        container_name: grafana_timescale
+        ports:
+        - 3001:3000
+        networks:
+        - app-tier
+        hostname: grafana
+        environment: 
+        - GF_INSTALL_PLUGINS=pr0ps-trackmap-panel 2.1.0, grafana-piechart-panel 1.6.1
+        depends_on:
+            timescaledb:
+                condition: service_healthy
+    metabase:
+        image: metabase/metabase:v0.44.5
+        container_name: metabase
+        hostname: metabase
+        networks: 
+        - app-tier
+        ports:
+        - 3000:3000
+        environment: 
+        - MB_DB_TYPE=postgres
+        - MB_DB_DBNAME=metabase
+        - MB_DB_PORT=5432
+        - MB_DB_USER=postgres
+        - MB_DB_PASS=password
+        - MB_DB_HOST=timescaledb
+        depends_on:
+            timescaledb:
+                condition: service_healthy
+        cpus: 1
+        mem_limit: 1024mb
+    setup-postgres:
+        image: bash:5.1.16
+        container_name: setup-postgres
+        volumes:
+        - $PWD/setup:/tmp
+        networks:
+        - app-tier
+        command: sh /tmp/metabase-setup.sh metabase:3000
+        cpus: 1
+        mem_limit: 128m
+    python-api:
+        container_name: python-api
+        hostname: python-api
+        restart: always
+        build: python-api/.
+        networks: 
+        - app-tier
+        cpus: 1
+        ports:
+            - 8080:80
+        mem_limit: 256mb
+        environment:
+        - "POSTGRES_HOST=timescaledb"
+        - "POSTGRES_USER=postgres"
+        - "POSTGRES_DB=gps"
+        - "POSTGRES_PASSWORD=password"
+        - "WEB_CONCURRENCY=1"
+        - "TIMEZONE_DIFFERENCE=3"
+        depends_on:
+            timescaledb:
+                condition: service_healthy
+networks:
+    app-tier:
+        driver: bridge
